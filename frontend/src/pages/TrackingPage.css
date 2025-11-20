@@ -1,0 +1,67 @@
+.tracking-page-container {
+  min-height: 100vh;
+  background: #FFF8DC;
+  color: #3A2C13;
+}
+
+.tracking-header {
+  font-weight: bold;
+}
+
+.btn-warning-custom {
+  background: #FFD700;
+  color: #3A2C13;
+  font-weight: 600;
+  border: none;
+}
+
+.tracking-card {
+  background: #fffbe6;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.tracking-card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0e5c4;
+}
+
+.tracking-card-body {
+  padding: 1.5rem;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 30px;
+  border-left: 3px solid #FFD700;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -37px;
+  top: 5px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #3A2C13;
+  border: 3px solid #FFD700;
+}
+
+.timeline-item:first-child .timeline-dot {
+  background-color: #198754; /* Green for the latest status */
+}
+
+.timeline-content h6 {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
