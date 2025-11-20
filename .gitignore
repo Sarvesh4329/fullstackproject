@@ -1,0 +1,28 @@
+# Root .gitignore for full-stack-bee-nest
+
+# Node dependencies
+**/node_modules/
+
+# Ignore environment files
+*.env
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Build output
+dist/
+build/
+
+# Lockfiles (optional to track)
+# package-lock.json
