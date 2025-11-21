@@ -68,6 +68,26 @@ function AdminDashboard({ setRole }) {
     fetchData();
   }, [fetchData]);
 
+  // Reports fetching
+  const [reports, setReports] = useState({ orders: null, appointments: null });
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [reportsError, setReportsError] = useState('');
+
+  const fetchReports = async () => {
+    setLoadingReports(true);
+    setReportsError('');
+    try {
+      const ordersResp = await api().get('/admin/reports/orders');
+      const apptResp = await api().get('/admin/reports/appointments');
+      setReports({ orders: ordersResp.data, appointments: apptResp.data });
+    } catch (err) {
+      console.error('Failed to fetch reports', err);
+      setReportsError('Failed to load reports.');
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
   const handleRoleChange = async (userId, newRole) => {
     try {
       await api().patch(`/admin/users/${userId}/role`, { role: newRole });
@@ -237,7 +257,14 @@ function AdminDashboard({ setRole }) {
 
       {/* Main Content Area */}
       <main className="dashboard-main">
-        <h1 className="mb-5" style={{ fontWeight: 'bold' }}>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+        <div className="d-flex align-items-center justify-content-between mb-4">
+          <h1 className="mb-0" style={{ fontWeight: 'bold' }}>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+          {activeTab === 'dashboard' && (
+            <div>
+              <Button style={{ background: accent, color: dark, fontWeight: 600, border: 'none' }} onClick={fetchReports} disabled={loadingReports}>{loadingReports ? 'Loading Reports...' : 'Generate Reports'}</Button>
+            </div>
+          )}
+        </div>
 
         {activeTab === 'dashboard' && (
           <div className="row g-4">
