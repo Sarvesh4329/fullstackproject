@@ -161,3 +161,69 @@ router.patch('/appointments/:id/assign', auth, requireRole('admin'), async (req,
 });
 
 module.exports = router;
+
+// ----------------------------
+// Reporting / Analytics Routes
+// ----------------------------
+
+// Orders report: total orders, revenue, counts per status, monthly orders (last 12 months)
+router.get('/reports/orders', auth, requireRole('admin'), async (req, res) => {
+  try {
+    const now = new Date();
+    const lastYear = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+
+    // Total orders and total revenue
+    const totals = await Order.aggregate([
+      { $group: { _id: null, totalOrders: { $sum: 1 }, totalRevenue: { $sum: { $multiply: ['$price', '$quantity'] } } } }
+    ]);
+
+    // Count by status
+    const byStatus = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+
+    // Monthly orders for last 12 months
+    const monthly = await Order.aggregate([
+      { $match: { createdAt: { $gte: lastYear } } },
+      { $project: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } } },
+      { $group: { _id: { year: '$year', month: '$month' }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
+
+    res.json({ totals: totals[0] || { totalOrders: 0, totalRevenue: 0 }, byStatus, monthly });
+  } catch (err) {
+    console.error('Error generating orders report:', err);
+    res.status(500).json({ error: 'Server error generating orders report' });
+  }
+});
+
+// Appointments report: total appointments, counts per status, per-beekeeper counts
+router.get('/reports/appointments', auth, requireRole('admin'), async (req, res) => {
+  try {
+    // totals
+    const totals = await Appointment.aggregate([
+      { $group: { _id: null, totalAppointments: { $sum: 1 } } }
+    ]);
+
+    // count by status
+    const byStatus = await Appointment.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+
+    // appointments per beekeeper (top 10)
+    const perBeekeeper = await Appointment.aggregate([
+      { $match: { beekeeper: { $ne: null } } },
+      { $group: { _id: '$beekeeper', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'beekeeperInfo' } },
+      { $unwind: { path: '$beekeeperInfo', preserveNullAndEmptyArrays: true } },
+      { $project: { _id: 0, beekeeperId: '$_id', beekeeperName: '$beekeeperInfo.name', count: 1 } }
+    ]);
+
+    res.json({ totals: totals[0] || { totalAppointments: 0 }, byStatus, perBeekeeper });
+  } catch (err) {
+    console.error('Error generating appointments report:', err);
+    res.status(500).json({ error: 'Server error generating appointments report' });
+  }
+});
