@@ -55,10 +55,11 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get all orders for products sold by the current beekeeper
+// Use the `beekeeper` field on Product (not `user`) — earlier code used `user` which returned no products
 router.get('/beekeeper', auth, requireRole('beekeeper'), async (req, res) => {
   try {
     // Find all products listed by the current beekeeper
-    const beekeeperProducts = await Product.find({ user: req.user.userId }).select('_id');
+    const beekeeperProducts = await Product.find({ beekeeper: req.user.userId }).select('_id');
     const productIds = beekeeperProducts.map(p => p._id);
 
     // Find all orders that contain those products
@@ -84,7 +85,8 @@ router.patch('/:id/status', auth, requireRole('beekeeper'), async (req, res) => 
     }
 
     // Security Check: Ensure the logged-in beekeeper owns the product in the order
-    if (!order.product || order.product.user.toString() !== req.user.userId) {
+    // Product schema uses `beekeeper` as the owner field
+    if (!order.product || (order.product.beekeeper && order.product.beekeeper.toString() !== req.user.userId)) {
       return res.status(403).json({ error: 'You are not authorized to update this order.' });
     }
 
