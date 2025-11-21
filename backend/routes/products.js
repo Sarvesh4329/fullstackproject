@@ -103,7 +103,7 @@ router.delete('/:id', auth, async (req, res) => {
 
     // Allow admin to delete any product
     if (req.user.role === 'admin') {
-      await product.remove();
+      await Product.findByIdAndDelete(req.params.id);
       return res.json({ message: 'Product deleted by admin' });
     }
 
@@ -112,10 +112,11 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to delete this product' });
     }
 
-    await product.remove();
+    await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Product deleted' });
   } catch (err) {
-    res.status(500).json({ error: 'Server error while deleting product.' });
+    console.error('Error deleting product:', err);
+    res.status(500).json({ error: err.message || 'Server error while deleting product.' });
   }
 });
 
