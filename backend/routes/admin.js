@@ -73,6 +73,35 @@ router.get('/orders', auth, requireRole('admin'), async (req, res) => {
   }
 });
 
+// Update order status (admin)
+router.patch('/orders/:id/status', auth, requireRole('admin'), async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ error: 'Status is required' });
+
+    const allowed = ['processing', 'shipped', 'completed', 'delivered', 'cancelled'];
+    if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    order.status = status;
+    order.statusHistory = order.statusHistory || [];
+    order.statusHistory.push({ status, updatedAt: new Date() });
+    await order.save();
+
+    const populated = await Order.findById(order._id)
+      .populate('user', 'name email')
+      .populate('product', 'name')
+      .populate('beekeeper', 'name');
+
+    res.json(populated);
+  } catch (err) {
+    console.error('Error updating order status:', err);
+    res.status(500).json({ error: 'Server error while updating order status' });
+  }
+});
+
 // Get all products
 router.get('/products', auth, requireRole('admin'), async (req, res) => {
   try {
