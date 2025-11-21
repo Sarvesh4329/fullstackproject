@@ -74,15 +74,22 @@ function AdminDashboard({ setRole }) {
   const [reportsError, setReportsError] = useState('');
 
   const fetchReports = async () => {
+    console.log('fetchReports called');
     setLoadingReports(true);
     setReportsError('');
     try {
       const ordersResp = await api().get('/admin/reports/orders');
       const apptResp = await api().get('/admin/reports/appointments');
+      console.log('orders report response:', ordersResp.data);
+      console.log('appointments report response:', apptResp.data);
       setReports({ orders: ordersResp.data, appointments: apptResp.data });
+      // quick user feedback
+      window.alert('Reports loaded successfully. Scroll down to view summaries.');
     } catch (err) {
       console.error('Failed to fetch reports', err);
-      setReportsError('Failed to load reports.');
+      const msg = err?.response?.data?.error || err.message || 'Failed to load reports.';
+      setReportsError(msg);
+      window.alert('Failed to load reports: ' + msg);
     } finally {
       setLoadingReports(false);
     }
