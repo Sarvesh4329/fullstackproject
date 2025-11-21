@@ -65,6 +65,58 @@ router.post('/', auth, requireRole('beekeeper'), upload.single('image'), async (
 // @desc    Beekeeper updates a product
 // @access  Private (Beekeeper only)
 // NOTE: The logic for PUT and DELETE would go here as well.
-// For this fix, we are focusing on the GET routes.
+// Add PUT (update) and DELETE (remove) routes so front-end admin/owner actions work.
+
+// @route   PUT /api/products/:id
+// @desc    Beekeeper updates a product
+// @access  Private (Beekeeper only)
+router.put('/:id', auth, requireRole('beekeeper'), upload.single('image'), async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    // only the beekeeper who created the product may update it
+    if (product.beekeeper && product.beekeeper.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Not authorized to update this product' });
+    }
+
+    const { name, description, price, quantity } = req.body;
+    if (name !== undefined) product.name = name;
+    if (description !== undefined) product.description = description;
+    if (price !== undefined) product.price = price;
+    if (quantity !== undefined) product.quantity = quantity;
+    if (req.file) product.image = req.file.filename;
+
+    const updated = await product.save();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error while updating product.' });
+  }
+});
+
+// @route   DELETE /api/products/:id
+// @desc    Delete a product (beekeeper owner or admin)
+// @access  Private (Beekeeper owner or Admin)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // Allow admin to delete any product
+    if (req.user.role === 'admin') {
+      await product.remove();
+      return res.json({ message: 'Product deleted by admin' });
+    }
+
+    // Otherwise only the beekeeper who added it can delete
+    if (product.beekeeper && product.beekeeper.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Not authorized to delete this product' });
+    }
+
+    await product.remove();
+    res.json({ message: 'Product deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error while deleting product.' });
+  }
+});
 
 module.exports = router;
